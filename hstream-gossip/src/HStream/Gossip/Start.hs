@@ -94,6 +94,7 @@ startGossip grpcHost gc@GossipContext{..} = do
           , HsGrpc.serverParallelism = 0
           , HsGrpc.serverSslOptions = Nothing
           , HsGrpc.serverOnStarted = Just serverOnStarted
+          , HsGrpc.serverInterceptors = []
           }
 #else
         GRPC.defaultServiceOptions

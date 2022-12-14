@@ -68,6 +68,7 @@ library
     HStream.Server.HsGrpcHandler
     HStream.Server.HStore
     HStream.Server.Initialization
+    HStream.Server.Interceptors
     HStream.Server.InternalHandler
     HStream.Server.MetaData
     HStream.Server.Shard
@@ -95,6 +96,8 @@ library
     other-modules: HStream.Server.Handler.StoreAdmin
 
   hs-source-dirs:     src
+  cxx-sources:        cbits/server_interceptors.cpp
+  cxx-options:        -std=c++17
   build-depends:
     , aeson
     , aeson-pretty

@@ -31,6 +31,7 @@ module HStream.Server.Handler.Stream
 
 import           Control.Exception
 import qualified HsGrpc.Server                    as G
+import qualified HsGrpc.Server.Context            as G
 import qualified HsGrpc.Server.Types              as G
 import           Network.GRPC.HighLevel.Generated
 
@@ -60,8 +61,9 @@ createStreamHandler sc (ServerNormalRequest _metadata stream) = defaultException
   C.createStream sc stream >>= returnResp
 
 handleCreateStream :: ServerContext -> G.UnaryHandler Stream Stream
-handleCreateStream sc _ stream = catchDefaultEx $ do
+handleCreateStream sc grpcCtx stream = catchDefaultEx $ do
   validateNameAndThrow $ streamStreamName stream
+  print =<< G.serverContextPeer grpcCtx
   C.createStream sc stream
 
 

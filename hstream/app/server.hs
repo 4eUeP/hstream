@@ -77,6 +77,7 @@ import           HStream.Utils                    (getProtoTimestamp,
 #ifdef HStreamUseHsGrpc
 import qualified HsGrpc.Server                    as HsGrpc
 import qualified HStream.Server.HsGrpcHandler     as HsGrpc
+import qualified HStream.Server.Interceptors      as HsGrpc
 #endif
 
 main :: IO ()
@@ -156,6 +157,7 @@ serve host port securityMap sc@ServerContext{..} listeners listenerSecurityMap =
 
 #ifdef HStreamUseHsGrpc
   sslOpts <- mapM readTlsPemFile $ join (Map.lookup "tls" securityMap)
+  interceptors <- HsGrpc.getServerInterceptors
 #else
   let sslOpts = initializeTlsConfig <$> join (Map.lookup "tls" securityMap)
 #endif
@@ -168,6 +170,7 @@ serve host port securityMap sc@ServerContext{..} listeners listenerSecurityMap =
           , HsGrpc.serverParallelism = 0
           , HsGrpc.serverSslOptions = sslOpts
           , HsGrpc.serverOnStarted = Just serverOnStarted
+          , HsGrpc.serverInterceptors = interceptors
           }
 #else
         GRPC.defaultServiceOptions
@@ -189,17 +192,17 @@ serve host port securityMap sc@ServerContext{..} listeners listenerSecurityMap =
         let sc' = sc{scAdvertisedListenersKey = Just key}
 #ifdef HStreamUseHsGrpc
         newSslOpts <- mapM readTlsPemFile $ join ((`Map.lookup` securityMap) =<< Map.lookup key listenerSecurityMap )
-        let grpcOpts' = grpcOpts { HsGrpc.serverPort = fromIntegral listenerPort
-                                 , HsGrpc.serverOnStarted = Just listenerOnStarted
-                                 , HsGrpc.serverSslOptions = newSslOpts
-                                 }
+        let grpcOpts' = grpcOpts{ HsGrpc.serverPort = fromIntegral listenerPort
+                                , HsGrpc.serverOnStarted = Just listenerOnStarted
+                                , HsGrpc.serverSslOptions = newSslOpts
+                                }
         HsGrpc.runServer grpcOpts' (HsGrpc.handlers sc')
 #else
         let newSslOpts = initializeTlsConfig <$> join ((`Map.lookup` securityMap) =<< Map.lookup key listenerSecurityMap )
-        let grpcOpts' = grpcOpts { GRPC.serverPort = GRPC.Port $ fromIntegral listenerPort
-                                 , GRPC.serverOnStarted = Just listenerOnStarted
-                                 , GRPC.sslConfig = newSslOpts
-                                 }
+        let grpcOpts' = grpcOpts{ GRPC.serverPort = GRPC.Port $ fromIntegral listenerPort
+                                , GRPC.serverOnStarted = Just listenerOnStarted
+                                , GRPC.sslConfig = newSslOpts
+                                }
         api <- handlers sc'
         hstreamApiServer api grpcOpts'
 #endif
